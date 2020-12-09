@@ -13,7 +13,7 @@ const generateRandomString = () => {
   const possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const possibleCharLength = possibleChar.length;
   for (i = 0; i < 6; i++) {
-    result += possibleChar[Math.floor(Math.random() * charactersLength)];
+    result += possibleChar[Math.floor(Math.random() * possibleCharLength)];
   }
   return result;
 }
@@ -52,6 +52,12 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
+});
+
+//redirect shortURL to longURL
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 });
 
 //POST new URL request
