@@ -1,14 +1,15 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const app = express();
-const PORT = 8080; // default port 8080
 
+const app = express();
+const PORT = 8080; 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
+//helper function for generating a random 6 character string
 const generateRandomString = () => {
   let result = "";
   const possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -19,11 +20,11 @@ const generateRandomString = () => {
   return result;
 }
 
-//middware
+//Middware Declarations
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
-//template engine setup
+//Template Engine Setup
 app.set("view engine", "ejs");
 
 //HOME PAGE
@@ -31,17 +32,6 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-//TEST WITH JSON STRING
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-//TEST WITH HTML STRINGS
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
-//display urls database by sending to ejs template file
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -64,13 +54,13 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-//redirect shortURL to longURL
+//redirect to longURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
-//POST new URL request
+//post requests coming from /new
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
@@ -85,7 +75,7 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
-  res.redirect(`/urls`);       // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls`);       
 });
 
 app.post("/urls/:shortURL", (req, res) => {
