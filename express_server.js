@@ -3,6 +3,11 @@ const bodyParser = require("body-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 
+const urlDatabase = {
+  "b2xVn2": "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com"
+};
+
 const generateRandomString = () => {
   let result = "";
   const possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -18,11 +23,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 //template engine setup
 app.set("view engine", "ejs");
-
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
 
 //HOME PAGE
 app.get("/", (req, res) => {
@@ -56,8 +56,10 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //POST new URL request
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const shortURL = generateRandomString();
+  const longURL = req.body.longURL;
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);       // Respond with 'Ok' (we will replace this)
 });
 
 
