@@ -36,7 +36,7 @@ const generateRandomString = () => {
 const findUser = (email) => {
   for (let user in users) {
     if (users[user].email === email) {
-      return user;
+      return users[user];
     }
   }
   return false;
@@ -86,12 +86,16 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  res.render("register");
+  let userID = req.cookies["userID"];
+  const templateVars = { user: users[userID] };
+  res.render("register", templateVars);
 });
 
 //NEW LOGIN PAGE
 app.get("/login", (req, res) => {
-  res.render("login");
+  let userID = req.cookies["userID"];
+  const templateVars = { user: users[userID] };
+  res.render("login", templateVars);
 });
 
 //post requests coming from /new
@@ -103,7 +107,18 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  let email = req.body.email;
+  let password = req.body.password;
+  let user = findUser(email);
+
+  if (user.email !== email) {
+    return res.status(403).send("Email or password is incorrect")
+  } 
+  if (user.password !== password) {
+    return res.status(403).send("Incorrect password or email, please try again.");
+  }
+
+  res.cookie("userID", user.id);
   res.redirect("/urls");       
 });
 
