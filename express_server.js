@@ -85,10 +85,14 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-//NEW FEATURE
 app.get("/register", (req, res) => {
   res.render("register");
-})
+});
+
+//NEW LOGIN PAGE
+app.get("/login", (req, res) => {
+  res.render("login");
+});
 
 //post requests coming from /new
 app.post("/urls", (req, res) => {
@@ -104,7 +108,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("userID");
   res.redirect(`/urls`);       
 });
 
@@ -141,6 +145,7 @@ app.post("/register", (req, res) => {
   res.cookie("userID", id);
   res.redirect("/urls");
 })
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
