@@ -76,19 +76,6 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);       
-<<<<<<< HEAD
-=======
-});
-
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect(`/urls`);       
-});
-
-app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect(`/urls`);       // Respond with 'Ok' (we will replace this)
->>>>>>> feature/cookies
 });
 
 app.post("/login", (req, res) => {
