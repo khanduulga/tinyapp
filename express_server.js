@@ -32,6 +32,16 @@ const generateRandomString = () => {
   return result;
 }
 
+//helper function for finding user with email
+const findUser = (email) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return user;
+    }
+  }
+  return false;
+}
+
 //Middware Declarations
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -113,6 +123,14 @@ app.post("/register", (req, res) => {
   let id = generateRandomString();
   let email = req.body.email;
   let password = req.body.password;
+
+  if (!email || !password) {
+    return res.status(400).send("Cannot register without email or password.")
+  }
+
+  if (findUser(email)) {
+    return res.status(400).send("This email exists.")
+  }
 
   users[id] = {
     id,
