@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
+const { generateRandomString, findUser, urlsForUser } = require("./helpers");
 
 const app = express();
 const PORT = 8080;
@@ -20,39 +21,6 @@ const users = {
     email: "user2@example.com",
     hashedPassword: bcrypt.hashSync("abcd", 10)
   }
-};
-
-/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~HELPER FUNCTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-//generates a random 6 character string
-const generateRandomString = () => {
-  let result = "";
-  const possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const possibleCharLength = possibleChar.length;
-  for (let i = 0; i < 6; i++) {
-    result += possibleChar[Math.floor(Math.random() * possibleCharLength)];
-  }
-  return result;
-};
-
-//finds user object from user dababase with email false if not
-const findUser = (email) => {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-  return false;
-};
-
-//returns the URLs where the userID is equal to the given id
-const urlsForUser = (id) => {
-  let result = {};
-  for (const url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      result[url] = urlDatabase[url];
-    }
-  }
-  return result;
 };
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SETUP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
@@ -78,7 +46,7 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
-  const userURLs = urlsForUser(userID);
+  const userURLs = urlsForUser(userID, urlDatabase);
   
   if (!userID) {
     res.redirect("/login");
@@ -165,7 +133,7 @@ app.post("/urls", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = findUser(email);
+  const user = findUser(email, users);
 
   if (user.email !== email) {
     return res.status(403).send("Email or password is incorrect");
@@ -187,7 +155,7 @@ app.post("/logout", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
-  if (!urlsForUser(userID)[shortURL]) {
+  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
     res.redirect("/login");
     return;
   }
@@ -198,7 +166,7 @@ app.post("/urls/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
-  if (!urlsForUser(userID)[shortURL]) {
+  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
     res.redirect("/login");
     return;
   }
@@ -217,7 +185,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Cannot register without email or password.");
   }
 
-  if (findUser(email)) {
+  if (findUser(email, users)) {
     return res.status(400).send("This email exists.");
   }
 
