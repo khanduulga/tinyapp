@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcrypt");
 
 const app = express();
 const PORT = 8080;
@@ -12,12 +13,12 @@ const users = {
   "randomID": {
     id: "randomID",
     email: "user@example.com",
-    password: "1234"
+    hashedPassword: bcrypt.hashSync("1234", 10)
   },
   "randomID2": {
     id: "randomID2",
     email: "user2@example.com",
-    password: "abcd"
+    hashedPassword: bcrypt.hashSync("abcd", 10)
   }
 };
 
@@ -102,12 +103,16 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.cookies["userID"];
+  const shortURL = req.params.shortURL;
+
   if (!userID) {
     res.redirect("/login");
     return;
   }
-
-  const shortURL = req.params.shortURL;
+  if (!urlDatabase[shortURL]) {
+    return res.status(404).send("No such link exists.");
+  }
+  
   const longURL = urlDatabase[shortURL]["longURL"];
 
   const templateVars = {
@@ -150,7 +155,6 @@ app.post("/urls", (req, res) => {
     userID
   };
 
-  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -162,7 +166,8 @@ app.post("/login", (req, res) => {
   if (user.email !== email) {
     return res.status(403).send("Email or password is incorrect");
   }
-  if (user.password !== password) {
+
+  if (!bcrypt.compareSync(password, user.hashedPassword)) {
     return res.status(403).send("Incorrect password or email, please try again.");
   }
 
@@ -199,9 +204,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  let id = generateRandomString();
-  let email = req.body.email;
-  let password = req.body.password;
+  const id = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
   if (!email || !password) {
     return res.status(400).send("Cannot register without email or password.");
@@ -214,7 +220,7 @@ app.post("/register", (req, res) => {
   users[id] = {
     id,
     email,
-    password
+    hashedPassword
   };
 
   res.cookie("userID", id);
@@ -222,6 +228,7 @@ app.post("/register", (req, res) => {
 });
 
 
+//LISTEN
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
