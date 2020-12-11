@@ -41,7 +41,14 @@ app.set("view engine", "ejs");
 
 //HOME PAGE
 app.get("/", (req, res) => {
-  res.redirect("/login");
+  const userID = req.session.user_id;
+
+  if (!userID) {
+    res.redirect("/login");
+    return;
+  }
+
+  res.redirect("/urls");
 });
 
 app.get("/urls", (req, res) => {
@@ -84,6 +91,9 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!urlDatabase[shortURL]) {
     return res.status(404).send("No such link exists.");
   }
+  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
+    return res.status(401).send("Access denied! Please login with appropriate account.");
+  }
   
   const longURL = urlDatabase[shortURL]["longURL"];
 
@@ -97,18 +107,36 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //redirect to longURL
 app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+
+  if (!urlDatabase[shortURL]) {
+    return res.status(404).send("No such link exists.");
+  }
+
   const longURL = urlDatabase[req.params.shortURL]["longURL"];
   res.redirect(longURL);
 });
 
 app.get("/register", (req, res) => {
   const userID = req.session.user_id;
+
+  if (userID) {
+    res.redirect("/urls");
+    return;
+  }
+
   const templateVars = { user: users[userID] };
   res.render("register", templateVars);
 });
 
 app.get("/login", (req, res) => {
   const userID = req.session.user_id;
+
+  if (userID) {
+    res.redirect("/urls");
+    return;
+  }
+
   const templateVars = { user: users[userID] };
   res.render("login", templateVars);
 });
@@ -119,6 +147,11 @@ app.get("/login", (req, res) => {
 //post requests coming from /new
 app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
+
+  if (!userID) {
+    return res.status(401).send("Access denied! Please login with appropriate account.");
+  }
+
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
   //may need to check if the request is coming from a logged in user
@@ -130,16 +163,44 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+app.post("/urls/:shortURL", (req, res) => {
+  const userID = req.session.user_id;
+  const shortURL = req.params.shortURL;
+
+  if (!userID) {
+    return res.status(401).send("Access denied! Please login with appropriate account.");
+  }
+
+  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
+    return res.status(401).send("Access denied! Please login with appropriate account.");
+  }
+
+  urlDatabase[shortURL]["longURL"] = req.body.longURL;
+  res.redirect("/urls");
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const userID = req.session.user_id;
+  const shortURL = req.params.shortURL;
+
+  if (!userID) {
+    return res.status(401).send("Access denied! Please login with appropriate account.");
+  }
+
+  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
+    return res.status(401).send("Access denied! Please login with appropriate account.");
+  }
+
+  delete urlDatabase[req.params.shortURL];
+  res.redirect("/urls");
+});
+
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = findUser(email, users);
 
-  if (user.email !== email) {
-    return res.status(403).send("Email or password is incorrect");
-  }
-
-  if (!bcrypt.compareSync(password, user.hashedPassword)) {
+  if (user.email !== email || !bcrypt.compareSync(password, user.hashedPassword)) {
     return res.status(403).send("Incorrect password or email, please try again.");
   }
 
@@ -152,28 +213,6 @@ app.post("/logout", (req, res) => {
   res.redirect(`/urls`);
 });
 
-app.post("/urls/:shortURL", (req, res) => {
-  const userID = req.session.user_id;
-  const shortURL = req.params.shortURL;
-  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
-    res.redirect("/login");
-    return;
-  }
-  urlDatabase[shortURL]["longURL"] = req.body.longURL;
-  res.redirect("/urls");
-});
-
-app.post("/urls/:shortURL/delete", (req, res) => {
-  const userID = req.session.user_id;
-  const shortURL = req.params.shortURL;
-  if (!urlsForUser(userID, urlDatabase)[shortURL]) {
-    res.redirect("/login");
-    return;
-  }
-
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
-});
 
 app.post("/register", (req, res) => {
   const id = generateRandomString();
@@ -186,7 +225,7 @@ app.post("/register", (req, res) => {
   }
 
   if (findUser(email, users)) {
-    return res.status(400).send("This email exists.");
+    return res.status(400).send("This email already exists.");
   }
 
   users[id] = {
