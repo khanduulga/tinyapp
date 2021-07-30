@@ -157,7 +157,6 @@ app.post("/urls", (req, res) => {
 
   const shortURL = generateRandomString();
   const longURL = req.body.longURL;
-  //may need to check if the request is coming from a logged in user
   urlDatabase[shortURL] = {
     longURL,
     userID
@@ -182,7 +181,8 @@ app.post("/urls/:shortURL", (req, res) => {
   res.redirect("/urls");
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
+//NEW RESTful path
+app.delete("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id;
   const shortURL = req.params.shortURL;
 
@@ -193,7 +193,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   if (!urlsForUser(userID, urlDatabase)[shortURL]) {
     return res.status(401).send("Access denied! Please login with appropriate account.");
   }
-
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
