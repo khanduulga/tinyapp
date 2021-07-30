@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
+const methodOverride = require("method-override");
 const bcrypt = require("bcrypt");
 const { generateRandomString, findUser, urlsForUser } = require("./helpers");
 
@@ -32,6 +33,8 @@ app.use(cookieSession({
   keys: ["key1"],
   secret: "You will never crack this"
 }));
+// method override POST having ?_method=DELETE
+app.use(methodOverride('_method'))
 
 //Template Engine Setup
 app.set("view engine", "ejs");
